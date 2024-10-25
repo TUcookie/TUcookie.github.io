@@ -1,0 +1,442 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新华今天吃什么</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        #addRecord {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%; /* 圆形按钮 */
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #addRecord:hover {
+            opacity: 0.8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .deleteBtn {
+            background: red;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .deleteBtn:hover {
+            opacity: 0.8;
+        }
+        .modal-content {
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px; /* Set a max width for the modal */
+            margin: auto; /* Center the modal */
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        input[type="text"], select, input[type="date"] {
+            width: 100%; /* Full width */
+            padding: 10px; /* Increased padding for comfort */
+            margin: 5px 0; /* Margin for spacing */
+            border: 1px solid #ccc; /* Border style */
+            border-radius: 4px; /* Rounded corners */
+            font-size: 14px; /* Decreased font size for dropdowns */
+        }
+        /* 设置日期列的宽度 */
+        th:nth-child(1), td:nth-child(1) {
+            width: 80px; /* 设置日期列的宽度 */
+        }
+        /* 筛选框样式 */
+        .filter-container {
+            display: none; /* 默认隐藏 */
+            margin-bottom: 10px;
+        }
+        .filter-button {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+        .filter-header {
+            display: flex;
+            justify-content: flex-end; /* Align filters to the right */
+            margin-bottom: 10px;
+        }
+        .filter-header > div {
+            margin-left: 10px; /* Space between filters */
+        }
+    </style>
+</head>
+<body>
+    <h1>新华今天吃什么</h1>
+    <button id="addRecord" onclick="openModal()">+</button>
+    <div class="filter-header">
+        <div>
+            <span class="filter-button" onclick="toggleFilter('dateFilterContainer')">筛选日期</span>
+            <div class="filter-container" id="dateFilterContainer">
+                <select id="dateSort" onchange="filterTable()">
+                    <option value="">选择排序</option>
+                    <option value="latest">最近</option>
+                    <option value="earliest">最早</option>
+                </select>
+                <input type="text" id="dateFilter" placeholder="筛选日期" onkeyup="filterTable()">
+            </div>
+        </div>
+        <div>
+            <span class="filter-button" onclick="toggleFilter('mealTypeFilterContainer')">筛选餐次</span>
+            <div class="filter-container" id="mealTypeFilterContainer">
+                <select id="mealTypeSelect" onchange="filterTable()">
+                    <option value="">选择餐次</option>
+                    <option value="早餐">早餐</option>
+                    <option value="午餐">午餐</option>
+                    <option value="晚餐">晚餐</option>
+                    <option value="宵夜">宵夜</option>
+                </select>
+                <input type="text" id="mealTypeFilter" placeholder="筛选餐次" onkeyup="filterTable()">
+            </div>
+        </div>
+        <div>
+            <span class="filter-button" onclick="toggleFilter('locationFilterContainer')">筛选出餐地点</span>
+            <div class="filter-container" id="locationFilterContainer">
+                <select id="locationSelect" onchange="toggleFloorOptions(); filterTable()">
+                    <option value="">选择出餐地点</option>
+                    <option value="新饭">新饭</option>
+                    <option value="旧饭">旧饭</option>
+                    <option value="校外">校外</option>
+                </select>
+                <select id="floorSelect" style="display:none;" onchange="filterTable()">
+                    <option value="">选择楼层</option>
+                    <option value="1楼">1楼</option>
+                    <option value="2楼">2楼</option>
+                    <option value="3楼">3楼</option>
+                </select>
+                <input type="text" id="locationFilter" placeholder="筛选出餐地点" onkeyup="filterTable()">
+            </div>
+        </div>
+        <div>
+            <span class="filter-button" onclick="toggleFilter('restaurantFilterContainer')">筛选用餐店铺</span>
+            <div class="filter-container" id="restaurantFilterContainer">
+                <input type="text" id="restaurantFilter" placeholder="筛选用餐店铺" onkeyup="filterTable()">
+            </div>
+        </div>
+    </div>
+
+    <table id="recordsList">
+        <thead>
+            <tr>
+                <th>日期</th>
+                <th>餐次</th>
+                <th>出餐地点</th>
+                <th>店铺</th>
+                <th>菜品</th>
+                <th>价格</th>
+                <th>评分</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 记录将被添加到这里 -->
+        </tbody>
+    </table>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>添加记录</h2>
+            <div class="form-group">
+                <label for="date">日期</label>
+                <input type="text" id="date" placeholder="yy-mm-dd">
+            </div>
+            <div class="form-group">
+                <label for="mealType">餐次</label>
+                <select id="mealType">
+                    <option value="">选择餐次</option>
+                    <option value="早餐">早餐</option>
+                    <option value="午餐">午餐</option>
+                    <option value="晚餐">晚餐</option>
+                    <option value="宵夜">宵夜</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="location">出餐地点</label>
+                <select id="location" onchange="updateFloorOptions()">
+                    <option value="">选择出餐地点</option>
+                    <option value="新饭">新饭</option>
+                    <option value="旧饭">旧饭</option>
+                    <option value="校外">校外</option>
+                </select>
+            </div>
+            <div class="form-group" id="floorGroup" style="display:none;">
+                <label for="floor">楼层</label>
+                <select id="floor">
+                    <option value="">选择楼层</option>
+                    <option value="1楼">1楼</option>
+                    <option value="2楼">2楼</option>
+                    <option value="3楼">3楼</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="restaurant">店铺</label>
+                <input type="text" id="restaurant" placeholder="店铺名称">
+            </div>
+            <div class="form-group">
+                <label for="dish">菜品</label>
+                <input type="text" id="dish" placeholder="菜品名称">
+            </div>
+            <div class="form-group">
+                <label for="price">价格</label>
+                <input type="text" id="price" placeholder="价格">
+            </div>
+            <div class="form-group">
+                <label for="rating">评分</label>
+                <input type="text" id="rating" placeholder="评分">
+            </div>
+            <button id="submitRecord">提交记录</button>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('modal').style.display = "block";
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('zh-CN', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+            document.getElementById('date').value = formattedDate; // 设置当前日期格式为yy-mm-dd
+        }
+
+        // 关闭弹出框
+        function closeModal() {
+            document.getElementById('modal').style.display = "none";
+        }
+
+        // 更新楼层选项显示
+        function updateFloorOptions() {
+            const location = document.getElementById('location').value;
+            const floorGroup = document.getElementById('floorGroup');
+            const floorSelect = document.getElementById('floor');
+            if (location === "新饭" || location === "旧饭") {
+                floorGroup.style.display = "block";
+            } else {
+                floorGroup.style.display = "none";
+                floorSelect.value = ''; // 清空楼层选择
+            }
+        }
+
+        // 提交记录
+        document.getElementById('submitRecord').addEventListener('click', () => {
+            const date = document.getElementById('date').value;
+            const mealType = document.getElementById('mealType').value;
+            const location = document.getElementById('location').value;
+            const floor = document.getElementById('floor').value;
+            const restaurant = document.getElementById('restaurant').value.trim();
+            const dish = document.getElementById('dish').value.trim();
+            const price = document.getElementById('price').value.trim();
+            const rating = document.getElementById('rating').value;
+
+            // 检查是否选择了日期、餐次、出餐地点、店铺和评分
+            if (!date || !mealType || !location || (location === "新饭" || location === "旧饭") && !floor || !restaurant || !dish || !price || !rating) {
+                alert('请确保所有字段都已填写！');
+                return;
+            }
+
+            // 合并出餐地点和楼层
+            const fullLocation = location + (floor ? floor : '');
+
+            // 添加记录到表格
+            addRecordToTable(date, mealType, fullLocation, restaurant, dish, price, rating);
+            saveRecordsToLocalStorage();
+            clearInputs();
+            closeModal(); // 关闭弹出框
+        });
+
+        function addRecordToTable(date, mealType, location, restaurant, dish, price, rating) {
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td>${date}</td>
+                <td>${mealType}</td>
+                <td>${location}</td>
+                <td>${restaurant}</td>
+                <td>${dish}</td>
+                <td>${price}</td>
+                <td>${rating}</td>
+                <td><button class="deleteBtn">删除</button></td>
+            `;
+
+            const deleteBtn = tr.querySelector('.deleteBtn');
+            deleteBtn.onclick = () => {
+                recordsList.removeChild(tr);
+                saveRecordsToLocalStorage(); // 更新本地存储
+            };
+
+            recordsList.appendChild(tr);
+        }
+
+        function clearInputs() {
+            document.getElementById('date').value = '';
+            document.getElementById('mealType').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('floor').value = '';
+            document.getElementById('restaurant').value = '';
+            document.getElementById('dish').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('rating').value = '';
+            document.getElementById('floorGroup').style.display = 'none'; // 隐藏楼层选择
+        }
+
+        function saveRecordsToLocalStorage() {
+            const records = [];
+            const rows = document.querySelectorAll('#recordsList tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                records.push({
+                    date: cells[0].textContent,
+                    mealType: cells[1].textContent,
+                    location: cells[2].textContent,
+                    restaurant: cells[3].textContent,
+                    dish: cells[4].textContent,
+                    price: cells[5].textContent,
+                    rating: cells[6].textContent
+                });
+            });
+            localStorage.setItem('foodRecords', JSON.stringify(records));
+        }
+
+        function loadRecordsFromLocalStorage() {
+            const records = JSON.parse(localStorage.getItem('foodRecords')) || [];
+            records.forEach(record => {
+                addRecordToTable(record.date, record.mealType, record.location, record.restaurant, record.dish, record.price, record.rating);
+            });
+        }
+
+        // 筛选表格
+        function filterTable() {
+            const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
+            const mealTypeFilter = document.getElementById('mealTypeFilter').value.toLowerCase();
+            const locationFilter = document.getElementById('locationFilter').value.toLowerCase();
+            const restaurantFilter = document.getElementById('restaurantFilter').value.toLowerCase();
+            const dishFilter = document.getElementById('dishFilter').value.toLowerCase();
+            const priceFilter = document.getElementById('priceFilter').value.toLowerCase();
+            const ratingFilter = document.getElementById('ratingFilter').value.toLowerCase();
+
+            const dateSort = document.getElementById('dateSort').value;
+            const mealTypeSelect = document.getElementById('mealTypeSelect').value;
+            const locationSelect = document.getElementById('locationSelect').value;
+            const ratingSelect = document.getElementById('ratingSelect').value;
+
+            const rows = document.querySelectorAll('#recordsList tbody tr');
+            const filteredRows = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                const dateMatch = cells[0].textContent.toLowerCase().includes(dateFilter);
+                const mealTypeMatch = mealTypeSelect ? cells[1].textContent.toLowerCase() === mealTypeSelect : true;
+                const locationMatch = locationSelect ? cells[2].textContent.toLowerCase() === locationSelect : true;
+                const restaurantMatch = cells[3].textContent.toLowerCase().includes(restaurantFilter);
+                const dishMatch = cells[4].textContent.toLowerCase().includes(dishFilter);
+                const priceMatch = priceFilter ? cells[5].textContent.toLowerCase().includes(priceFilter) : true;
+                const ratingMatch = ratingSelect ? cells[6].textContent === ratingSelect : true;
+
+                if (dateMatch && mealTypeMatch && locationMatch && restaurantMatch && dishMatch && priceMatch && ratingMatch) {
+                    filteredRows.push(rows[i]);
+                }
+            }
+
+            // 根据日期排序
+            if (dateSort === "latest") {
+                filteredRows.sort((a, b) => new Date(b.cells[0].textContent) - new Date(a.cells[0].textContent));
+            } else if (dateSort === "earliest") {
+                filteredRows.sort((a, b) => new Date(a.cells[0].textContent) - new Date(b.cells[0].textContent));
+            }
+
+            // 隐藏所有行
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].style.display = "none";
+            }
+
+            // 显示过滤后的行
+            filteredRows.forEach(row => {
+                row.style.display = "";
+            });
+        }
+
+        // 切换筛选框显示
+        function toggleFilter(containerId) {
+            const container = document.getElementById(containerId);
+            if (container.style.display === "none" || container.style.display === "") {
+                container.style.display = "block"; // 显示筛选框
+            } else {
+                container.style.display = "none"; // 隐藏筛选框
+            }
+        }
+
+        // 切换楼层选择显示
+        function toggleFloorOptions() {
+            const locationSelect = document.getElementById('locationSelect');
+            const floorSelect = document.getElementById('floorSelect');
+            if (locationSelect.value === "新饭" || locationSelect.value === "旧饭") {
+                floorSelect.style.display = "inline"; // 显示楼层选择
+            } else {
+                floorSelect.style.display = "none"; // 隐藏楼层选择
+            }
+        }
+
+        // 页面加载时加载记录
+        window.onload = loadRecordsFromLocalStorage;
+    </script>
+</body>
+</html>
